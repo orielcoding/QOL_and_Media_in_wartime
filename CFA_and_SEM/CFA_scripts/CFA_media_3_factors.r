@@ -79,6 +79,7 @@ full.model2 <- paste(
   "media1 =~", paste(media1_x, collapse = " + "), ";",
   "media2 =~", paste(media2_x, collapse = " + "), ";",
   "media3 =~", paste(media3_x, collapse = " + "), ";",
+  "media =~ media1 + media2 + media3",
   
    sep = "\n"
 )
@@ -94,85 +95,7 @@ semPaths(full.fit2, intercepts = TRUE, edge.label.cex = 1, what = 'std', structu
 
 ########################
 
-results_file <- file.path(results_dir, "SEM_media_4_factors.txt")
-
-# To save all results
-sink(results_file)
-
-media_loadings <- read.csv(file.path(current_dir, "..", "loadings/media_4_factor_loadings.csv"), stringsAsFactors = FALSE)
-
-#media_max_indices <- get_max_indices_per_factor(media_loadings[, c("Factor1", "Factor2", "Factor3", "Factor4")])
-media_threshold_indices <- get_indices_above_threshold(media_loadings[, c("Factor1", "Factor2", "Factor3", "Factor4")], 0.3)
-
-# Create lists for each factor
-#media1_indices <- which(media_max_indices == 1)
-#media2_indices <- which(media_max_indices == 2)
-#media3_indices <- which(media_max_indices == 3)
-#media4_indices <- which(media_max_indices == 4)
-media1_indices <- media_threshold_indices[["Factor1"]]
-media2_indices <- media_threshold_indices[["Factor2"]]
-media3_indices <- media_threshold_indices[["Factor3"]]
-media4_indices <- media_threshold_indices[["Factor4"]]
-
-media1_x <- map_indices(media1_indices, x_mapping)
-media2_x <- map_indices(media2_indices, x_mapping)
-media3_x <- map_indices(media3_indices, x_mapping)
-media4_x <- map_indices(media4_indices, x_mapping)
-
-
-full.model2 <- paste(
-  "media1 =~", paste(media1_x, collapse = " + "), ";",
-  "media2 =~", paste(media2_x, collapse = " + "), ";",
-  "media3 =~", paste(media3_x, collapse = " + "), ";",
-  "media4 =~", paste(media4_x, collapse = " + "),
-  
-  sep = "\n"
-)
-
-full.fit2 <- cfa(full.model2, data = respondents_data)
-summary(full.fit2, standardized = TRUE, fit.measures = TRUE)
-
-# Save the results to the output file
-sink()
-
-semPaths(full.fit2, intercepts = TRUE, edge.label.cex = 1, what = 'std', structural = FALSE)
-
-
 ########################
-
-results_file <- file.path(results_dir, "SEM_media_2_factors.txt")
-
-# To save all results
-sink(results_file)
-
-media_loadings <- read.csv(file.path(current_dir, "..", "loadings/media_2_factor_loadings.csv"), stringsAsFactors = FALSE)
-#media_max_indices <- get_max_indices_per_factor(media_loadings[, c("Factor1", "Factor2")])
-media_threshold_indices <- get_indices_above_threshold(media_loadings[, c("Factor1", "Factor2")], 0.3)
-
-# Create lists for each factor
-#media1_indices <- which(media_max_indices == 1)
-#media2_indices <- which(media_max_indices == 2)
-media1_indices <- media_threshold_indices[["Factor1"]]
-media2_indices <- media_threshold_indices[["Factor2"]]
-
-media1_x <- map_indices(media1_indices, x_mapping)
-media2_x <- map_indices(media2_indices, x_mapping)
-
-
-full.model2 <- paste(
-  "media1 =~", paste(media1_x, collapse = " + "), ";",
-  "media2 =~", paste(media2_x, collapse = " + "),
-  
-  sep = "\n"
-)
-
-full.fit2 <- cfa(full.model2, data = respondents_data)
-summary(full.fit2, standardized = TRUE, fit.measures = TRUE)
-
-# Save the results to the output file
-sink()
-
-semPaths(full.fit2, intercepts = TRUE, edge.label.cex = 1, what = 'std', structural = FALSE)
 
 
 ########################
