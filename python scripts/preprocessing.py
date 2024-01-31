@@ -52,7 +52,7 @@ def create_and_save_mapping(partial_df, full_df, prefix, output_directory):
     :return: The full DataFrame with the renamed columns
     """
     mapping = {}
-    csv_data = []
+    excel_data = []
 
     for i, col in enumerate(partial_df.columns):
         # Extract text within square brackets if present using regex. This part is relevant for parts of the questionnaire
@@ -65,13 +65,12 @@ def create_and_save_mapping(partial_df, full_df, prefix, output_directory):
 
         # Create the mapping
         mapping[col] = f"{prefix}{i + 1}"
-        csv_data.append({'Questions': col_name, 'Variable': f"{prefix}{i + 1}"})
+        excel_data.append({'Questions': col_name, 'Variable': f"{prefix}{i + 1}"})
 
-    # Save mapping to a CSV file with utf-8-sig encoding
-    with open(output_directory, "w", newline='', encoding='utf-8-sig') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=['Questions', 'Variable'])
-        writer.writeheader()
-        writer.writerows(csv_data)
+        dataframe = pd.DataFrame(excel_data)
+
+        dataframe.to_excel(output_directory, index=False)
+
 
     # Rename columns in the provided DataFrame
     full_df = full_df.rename(columns=mapping)
@@ -86,7 +85,9 @@ def main():
     """
 
     # Load the responses file
-    df = pd.read_excel(RESPONSES_PATH)
+    df_not_full_qol = pd.read_excel(RESPONSES_PATH)
+    df_full_qol = pd.read_excel(RESPONSES_FULL_QOL_PATH)
+    df = pd.concat([df_not_full_qol, df_full_qol], axis=0)
 
     # Split the DataFrame into question type seperated, columns are chosen by specific questions organization.
     stress_df = pd.concat([df.iloc[:, excel_column_number('H'):excel_column_number('N') + 1],
@@ -96,7 +97,7 @@ def main():
     phone_df = df.iloc[:, excel_column_number('T'):excel_column_number('Y') + 1]
     media_df = df.iloc[:, excel_column_number('Z'):excel_column_number('AR') + 1]
     resilience_df = df.iloc[:, excel_column_number('AS'):excel_column_number('BB') + 1]
-    QOL_df = df.iloc[:, excel_column_number('BC'):excel_column_number('BU') + 1]  # TODO: adjust for n questions changes
+    QOL_df = df.iloc[:, excel_column_number('BC'):excel_column_number('BU') + 1]
 
     df_list = [stress_df, support_df, phone_df, media_df, resilience_df, QOL_df]
 
@@ -115,7 +116,7 @@ def main():
 
     # Drop rows with uniform responses in qol_df
     qol_index_to_drop = detect_uniform_responses('QOL_df', QOL_df, std_threshold=0.2, range_threshold=2,
-                                                 verbose=0)  # Some questions have different sentiment
+                                                 verbose=1)  # Some questions have different sentiment
 
     # Change QOL negative questions values to positive TODO: adjust for new data when questions are added
     columns_to_change = [
@@ -219,7 +220,7 @@ def main():
     }
     media_df.drop('במידה וסימנת "כן" בשאלה הקודמת, ציין/ני מה הוא מקור זה. ', axis=1, inplace=True)
     media_df.drop('בזמן מילוי שאלון זה מצב הלחימה הינו', axis=1,
-                  inplace=True)  # TODO: if new answers are added, delete.
+                  inplace=True)
     for col in media_df.columns:
         if 'עד כמה' in col:
             media_df[col] = media_df[col].map(lambda x: media_val_mapping.get(x, x))
@@ -232,6 +233,8 @@ def main():
         lambda x: 1 if x == 'כן' else 0)
     media_df['האם הנך מקבל/ת בטלפון התראות מאתרי חדשות?'] = media_df['האם הנך מקבל/ת בטלפון התראות מאתרי חדשות?'].map(
         lambda x: 1 if x == 'כן' else 0)
+    media_df['ציין עד כמה הנך מקבל/ת מידע חדשותי מהערוצים זרים -- ישראליים.'] = \
+        media_df['ציין עד כמה הנך מקבל/ת מידע חדשותי מהערוצים זרים -- ישראליים.'].map(lambda x: 8-x)
 
     # Mapping specific questions value for support_df
     support_df['שיוך דתי'] = support_df['שיוך דתי'].map(lambda x: 1 if x == 'דתי' else 0)
@@ -252,6 +255,9 @@ def main():
     # Concatenate all the DataFrames
     combined_df = pd.concat([resilience_df, QOL_df, stress_df, support_df, phone_df, media_df], axis=1)
 
+    # Normalize all data to scale of 0-1
+    combined_df = combined_df.apply(lambda x: (x - x.min()) / (x.max() - x.min()))
+
     combined_df = pd.concat([combined_df, unchanged_df], axis=1)
 
     # creating list again because of changed dataframes. create list of letter encoding for each dataframe
@@ -260,11 +266,11 @@ def main():
 
     # Create and save the mappings of columns for sem analysis
     for df, prefix in zip(df_list, letters_mapping_list):
-        combined_df = create_and_save_mapping(df, combined_df, prefix, ITEM_MAPS_PATH / f'{prefix}_mapping.csv')
+        combined_df = create_and_save_mapping(df, combined_df, prefix, ITEM_MAPS_PATH / f'{prefix}_mapping.xlsx')
 
-    # Drop rows of qol_index_to_drop and save dropped lines to a csv file named 'dropped_lines.csv'
+    # Drop rows of qol_index_to_drop and save dropped lines to a excel file named 'dropped_lines.xlsx'
     dropped_lines = combined_df.loc[qol_index_to_drop, :]
-    dropped_lines.to_csv(ITEM_MAPS_PATH / 'dropped_lines.csv', index=False)
+    dropped_lines.to_excel(ITEM_MAPS_PATH / 'dropped_lines.xlsx', index=False)
     combined_df.drop(qol_index_to_drop, inplace=True)
 
     # Save the combined DataFrame to an Excel file
@@ -277,7 +283,8 @@ if __name__ == "__main__":
 
     # Path to the 'responses.xlsx' file in the 'data' folder
     data_folder_path = script_dir / '..' / 'data'
-    RESPONSES_PATH = data_folder_path / 'responses1212.xlsx'
+    RESPONSES_PATH = data_folder_path / 'responses210124.xlsx'
+    RESPONSES_FULL_QOL_PATH = data_folder_path / 'responses_full_qol300124.xlsx'
 
     # Create a directory for the items maps
     ITEM_MAPS_PATH = script_dir / '..' / 'items_maps'

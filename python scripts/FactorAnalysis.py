@@ -6,6 +6,7 @@ import numpy as np
 from EDA import reverse_hebrew_text
 from factor_analyzer import FactorAnalyzer
 from pathlib import Path
+import xlsxwriter
 from sklearn.cluster import AgglomerativeClustering
 from scipy.cluster.hierarchy import dendrogram, linkage
 
@@ -20,9 +21,9 @@ def scaling_data(dataframe):
     return scaled_data
 
 
-def rename_dataframe_from_csv(df, csv_file_path):
-    # Read the CSV file
-    mapping_df = pd.read_csv(csv_file_path, encoding='utf-8')
+def rename_dataframe_from_excel(df, excel_file_path):
+    # Read the excel file
+    mapping_df = pd.read_excel(excel_file_path)
 
     # Apply reverse_hebrew_text to each value in the 'Questions' column
     mapping_df['Questions'] = mapping_df['Questions'].apply(reverse_hebrew_text)
@@ -70,14 +71,44 @@ def factor_analysis(dataframe: pd.DataFrame, df_name: str, n_components: int = 3
         plt.title(f"Scree plot for {df_name}")
         plt.show()
 
-    # Save loadings of n_components to CSV file
+    # Assuming fa.loadings_, n_components, dataframe, and reverse_hebrew_text are defined
     loadings = fa.loadings_
     print(f"{df_name} loadings:\n", loadings)
     loadings_df = pd.DataFrame(loadings, columns=[f"Factor{i}" for i in range(1, n_components + 1)])
     loadings_df.index = [reverse_hebrew_text(idx) for idx in dataframe.columns]
 
-    loadings_df.to_csv(LOADINGS_PATH / f'{df_name}_loadings.csv', encoding='utf-8-sig')
+    # Define a threshold for conditional formatting
+    threshold = 0.2  # Adjust this value as needed
 
+    # Path for the Excel file
+    excel_path = LOADINGS_PATH / f'{df_name}_loadings.xlsx'
+
+    # Create a Pandas Excel writer using XlsxWriter as the engine
+    writer = pd.ExcelWriter(excel_path, engine='xlsxwriter')
+    loadings_df.to_excel(writer, sheet_name='Sheet1', index=True)
+
+    # Access the XlsxWriter workbook and worksheet objects from the writer
+    workbook = writer.book
+    worksheet = writer.sheets['Sheet1']
+
+    # Define your format for highlighting
+    highlight_format = workbook.add_format({'bg_color': '#FFC7CE', 'font_color': '#9C0006'})
+
+    # Get the number of rows and columns
+    num_rows = len(loadings_df.index)
+    num_cols = len(loadings_df.columns)
+
+    # Apply conditional formatting to each cell in the DataFrame
+    for col in range(num_cols):
+        # Excel columns start from 1 in conditional_format method when using string notation
+        worksheet.conditional_format(1, col + 1, num_rows, col + 1,  # Adjust the range appropriately
+                                     {'type': 'cell',
+                                      'criteria': '>',
+                                      'value': threshold,
+                                      'format': highlight_format})
+
+    # Close the Pandas Excel writer and output the Excel file
+    writer.close()
 
 def corr_heatmap(dataframes: list, df_names: list, threshold=.65) -> None:
     plt.figure(figsize=(15, 10))
@@ -123,14 +154,14 @@ def main():
     support_df = df.loc[:, df.columns.str.contains('v')]
 
     # Changing columns names back to the questions for readability
-    qol_df = rename_dataframe_from_csv(qol_df, ITEM_MAPS_PATH / 'y_mapping.csv')
-    resilience_df = rename_dataframe_from_csv(resilience_df, ITEM_MAPS_PATH / 'z_mapping.csv')
-    media_df = rename_dataframe_from_csv(media_df, ITEM_MAPS_PATH / 'x_mapping.csv')
-    phone_df = rename_dataframe_from_csv(phone_df, ITEM_MAPS_PATH / 'w_mapping.csv')
-    stress_df = rename_dataframe_from_csv(stress_df, ITEM_MAPS_PATH / 'u_mapping.csv')
-    support_df = rename_dataframe_from_csv(support_df, ITEM_MAPS_PATH / 'v_mapping.csv')
+    qol_df = rename_dataframe_from_excel(qol_df, ITEM_MAPS_PATH / 'y_mapping.xlsx')
+    resilience_df = rename_dataframe_from_excel(resilience_df, ITEM_MAPS_PATH / 'z_mapping.xlsx')
+    media_df = rename_dataframe_from_excel(media_df, ITEM_MAPS_PATH / 'x_mapping.xlsx')
+    phone_df = rename_dataframe_from_excel(phone_df, ITEM_MAPS_PATH / 'w_mapping.xlsx')
+    stress_df = rename_dataframe_from_excel(stress_df, ITEM_MAPS_PATH / 'u_mapping.xlsx')
+    support_df = rename_dataframe_from_excel(support_df, ITEM_MAPS_PATH / 'v_mapping.xlsx')
 
-    # FA on resilience
+    # # FA on resilience
     resilience_scaled_data = scaling_data(resilience_df)
     nan_resilience_rows = np.isnan(resilience_scaled_data).any(axis=1)
     resilience_scaled_data = resilience_scaled_data[~nan_resilience_rows]
@@ -138,15 +169,15 @@ def main():
     resilience_scaled_data.dropna(inplace=True)
     factor_analysis(resilience_scaled_data, 'resilience', n_components=1, eigenvalues_plot=False)
     # corr_heatmap([resilience_scaled_data], ['resilience'])
-
+    #
     # FA on qol
     qol_scaled_data = scaling_data(qol_df)
     nan_qol_rows = np.isnan(qol_scaled_data).any(axis=1)
     qol_scaled_data = qol_scaled_data[~nan_qol_rows]
     qol_scaled_data = pd.DataFrame(qol_scaled_data, columns=qol_df.columns)
     factor_analysis(qol_scaled_data, 'QOL', n_components=3)
-    # corr_heatmap([qol_scaled_data], ['QOL'])
-
+    # # # corr_heatmap([qol_scaled_data], ['QOL'])
+    # #
     # FA on phone usage
     phone_scaled_data = scaling_data(phone_df)
     nan_phone_rows = np.isnan(phone_scaled_data).any(axis=1)
@@ -154,25 +185,25 @@ def main():
     phone_scaled_data = pd.DataFrame(phone_scaled_data, columns=phone_df.columns)
     factor_analysis(phone_scaled_data, 'phone', n_components=1, eigenvalues_plot=False)
     # corr_heatmap([phone_scaled_data], ['phone'])
-
-    # FA on media
+    # #
+    # # # FA on media
     media_scaled_data = scaling_data(media_df)
     media_scaled_data = pd.DataFrame(media_scaled_data, columns=media_df.columns)
     media_scaled_data['.םיילארשי -- םירז םיצורעהמ יתושדח עדימ ת/לבקמ ךנה המכ דע ןייצ'].fillna(7, inplace=True)
     factor_analysis(media_scaled_data, 'media_2_factor', n_components=2, eigenvalues_plot=False)
-    factor_analysis(media_scaled_data, 'media_3_factor', n_components=3, eigenvalues_plot=False)
+    factor_analysis(media_scaled_data, 'media_3_factor', n_components=3, eigenvalues_plot=True)
     factor_analysis(media_scaled_data, 'media_4_factor', n_components=4, eigenvalues_plot=False)
-    # corr_heatmap([media_scaled_data], ['media'])
-
-    # FA on stress
+    # # corr_heatmap([media_scaled_data], ['media'])
+    #
+    # # FA on stress
     stress_scaled_data = scaling_data(stress_df)
     nan_stress_rows = np.isnan(stress_scaled_data).any(axis=1)
     stress_scaled_data = stress_scaled_data[~nan_stress_rows]
     stress_scaled_data = pd.DataFrame(stress_scaled_data, columns=stress_df.columns)
     factor_analysis(stress_scaled_data, 'stress', n_components=1, eigenvalues_plot=False)
     # corr_heatmap([stress_scaled_data], ['stress'])
-
-    # FA on support
+    #
+    # # FA on support
     support_scaled_data = scaling_data(support_df)
     nan_support_rows = np.isnan(support_scaled_data).any(axis=1)
     support_scaled_data = support_scaled_data[~nan_support_rows]
@@ -181,7 +212,7 @@ def main():
     # corr_heatmap([support_scaled_data], ['support'])
 
     # FA on previous study qol
-    # previous_qol_df = pd.read_csv(PREVIOUS_STUDY_DATA_PATH)
+    # previous_qol_df = pd.read_excel(PREVIOUS_STUDY_DATA_PATH)
     # previous_qol_df = previous_qol_df.loc[:, previous_qol_df.columns.str.contains('y')]
     # previous_qol_scaled_data = scaling_data(previous_qol_df)
     # previous_qol_scaled_data = pd.DataFrame(previous_qol_scaled_data, columns=previous_qol_df.columns)
