@@ -11,16 +11,6 @@ from sklearn.cluster import AgglomerativeClustering
 from scipy.cluster.hierarchy import dendrogram, linkage
 
 
-def scaling_data(dataframe):
-    """Accepts a dataframe and returns a dataframe with scaled data"""
-    # Standardize the data
-    scaler = StandardScaler()
-    scaler.fit(dataframe)
-    scaled_data = scaler.transform(dataframe)
-
-    return scaled_data
-
-
 def rename_dataframe_from_excel(df, excel_file_path):
     # Read the excel file
     mapping_df = pd.read_excel(excel_file_path)
@@ -162,62 +152,48 @@ def main():
     support_df = rename_dataframe_from_excel(support_df, ITEM_MAPS_PATH / 'v_mapping.xlsx')
 
     # # FA on resilience
-    resilience_scaled_data = scaling_data(resilience_df)
-    nan_resilience_rows = np.isnan(resilience_scaled_data).any(axis=1)
-    resilience_scaled_data = resilience_scaled_data[~nan_resilience_rows]
-    resilience_scaled_data = pd.DataFrame(resilience_scaled_data, columns=resilience_df.columns)
-    resilience_scaled_data.dropna(inplace=True)
-    factor_analysis(resilience_scaled_data, 'resilience', n_components=1, eigenvalues_plot=False)
+    nan_resilience_rows = np.isnan(resilience_df).any(axis=1)
+    resilience_df = resilience_df[~nan_resilience_rows]
+    resilience_df = pd.DataFrame(resilience_df, columns=resilience_df.columns)
+    resilience_df.dropna(inplace=True)
+    factor_analysis(resilience_df, 'resilience', n_components=1, eigenvalues_plot=False)
     # corr_heatmap([resilience_scaled_data], ['resilience'])
     #
     # FA on qol
-    qol_scaled_data = scaling_data(qol_df)
-    nan_qol_rows = np.isnan(qol_scaled_data).any(axis=1)
-    qol_scaled_data = qol_scaled_data[~nan_qol_rows]
-    qol_scaled_data = pd.DataFrame(qol_scaled_data, columns=qol_df.columns)
-    factor_analysis(qol_scaled_data, 'QOL', n_components=3)
-    # # # corr_heatmap([qol_scaled_data], ['QOL'])
-    # #
+    nan_qol_rows = np.isnan(qol_df).any(axis=1)
+    qol_df = qol_df[~nan_qol_rows]
+    qol_df = pd.DataFrame(qol_df, columns=qol_df.columns)
+    factor_analysis(qol_df, 'QOL', n_components=3)
+    # corr_heatmap([qol_scaled_data], ['QOL'])
+
     # FA on phone usage
-    phone_scaled_data = scaling_data(phone_df)
-    nan_phone_rows = np.isnan(phone_scaled_data).any(axis=1)
-    phone_scaled_data = phone_scaled_data[~nan_phone_rows]
-    phone_scaled_data = pd.DataFrame(phone_scaled_data, columns=phone_df.columns)
-    factor_analysis(phone_scaled_data, 'phone', n_components=1, eigenvalues_plot=False)
+    nan_phone_rows = np.isnan(phone_df).any(axis=1)
+    phone_df = phone_df[~nan_phone_rows]
+    phone_df = pd.DataFrame(phone_df, columns=phone_df.columns)
+    factor_analysis(phone_df, 'phone', n_components=1, eigenvalues_plot=False)
     # corr_heatmap([phone_scaled_data], ['phone'])
-    # #
-    # # # FA on media
-    media_scaled_data = scaling_data(media_df)
-    media_scaled_data = pd.DataFrame(media_scaled_data, columns=media_df.columns)
-    media_scaled_data['.םיילארשי -- םירז םיצורעהמ יתושדח עדימ ת/לבקמ ךנה המכ דע ןייצ'].fillna(7, inplace=True)
-    factor_analysis(media_scaled_data, 'media_2_factor', n_components=2, eigenvalues_plot=False)
-    factor_analysis(media_scaled_data, 'media_3_factor', n_components=3, eigenvalues_plot=True)
-    factor_analysis(media_scaled_data, 'media_4_factor', n_components=4, eigenvalues_plot=False)
-    # # corr_heatmap([media_scaled_data], ['media'])
+    #
+    # FA on media
+    media_df = pd.DataFrame(media_df, columns=media_df.columns)
+    media_df['.םיילארשי -- םירז םיצורעהמ יתושדח עדימ ת/לבקמ ךנה המכ דע ןייצ'].fillna(7, inplace=True)
+    factor_analysis(media_df, 'media_2_factor', n_components=2, eigenvalues_plot=False)
+    factor_analysis(media_df, 'media_3_factor', n_components=3, eigenvalues_plot=True)
+    factor_analysis(media_df, 'media_4_factor', n_components=4, eigenvalues_plot=False)
+    # # corr_heatmap([media_df], ['media'])
     #
     # # FA on stress
-    stress_scaled_data = scaling_data(stress_df)
-    nan_stress_rows = np.isnan(stress_scaled_data).any(axis=1)
-    stress_scaled_data = stress_scaled_data[~nan_stress_rows]
-    stress_scaled_data = pd.DataFrame(stress_scaled_data, columns=stress_df.columns)
-    factor_analysis(stress_scaled_data, 'stress', n_components=1, eigenvalues_plot=False)
-    # corr_heatmap([stress_scaled_data], ['stress'])
-    #
-    # # FA on support
-    support_scaled_data = scaling_data(support_df)
-    nan_support_rows = np.isnan(support_scaled_data).any(axis=1)
-    support_scaled_data = support_scaled_data[~nan_support_rows]
-    support_scaled_data = pd.DataFrame(support_scaled_data, columns=support_df.columns)
-    factor_analysis(support_scaled_data, 'support', n_components=1, eigenvalues_plot=False)
-    # corr_heatmap([support_scaled_data], ['support'])
+    nan_stress_rows = np.isnan(stress_df).any(axis=1)
+    stress_df = stress_df[~nan_stress_rows]
+    stress_df = pd.DataFrame(stress_df, columns=stress_df.columns)
+    factor_analysis(stress_df, 'stress', n_components=1, eigenvalues_plot=False)
+    # corr_heatmap([stress_df], ['stress'])
 
-    # FA on previous study qol
-    # previous_qol_df = pd.read_excel(PREVIOUS_STUDY_DATA_PATH)
-    # previous_qol_df = previous_qol_df.loc[:, previous_qol_df.columns.str.contains('y')]
-    # previous_qol_scaled_data = scaling_data(previous_qol_df)
-    # previous_qol_scaled_data = pd.DataFrame(previous_qol_scaled_data, columns=previous_qol_df.columns)
-    # factor_analysis(previous_qol_scaled_data, 'Previous study QOL', n_components=3, eigenvalues_plot=False)
-
+    # FA on support
+    nan_support_rows = np.isnan(support_df).any(axis=1)
+    support_df = support_df[~nan_support_rows]
+    support_df = pd.DataFrame(support_df, columns=support_df.columns)
+    factor_analysis(support_df, 'support', n_components=1, eigenvalues_plot=False)
+    # corr_heatmap([support_df], ['support'])
 
 if __name__ == "__main__":
     # Path to the directory where the script is located
