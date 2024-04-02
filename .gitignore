@@ -1,0 +1,16 @@
+# R files
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# venv files
+__pycache__/
+.idea/
+
+# undesired folders for the current branch
+loadings/
+items_maps/
+general docs/
+CFA_and_SEM/
+2019 study/
