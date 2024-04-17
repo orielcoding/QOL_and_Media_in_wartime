@@ -1,7 +1,10 @@
 import pandas as pd
 from pathlib import Path
-import csv
 import re
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import IterativeImputer
+from sklearn.impute import KNNImputer
+import json
 
 
 def excel_column_number(col_str):
@@ -14,22 +17,29 @@ def excel_column_number(col_str):
     return col_num - 1
 
 
-def detect_uniform_responses(df_name, dataframe, std_threshold=0.0, range_threshold=0, verbose=0):
+def detect_uniform_responses(dataframe: pd.DataFrame, std_threshold: float = 0.0, range_threshold: int = 0, verbose=0):
     """
-    find rows with uniform responses for a specific DataFrame (represent specific part of the entire questionnaire).
-    Use std and range to detect rows with almost uniform responses in a specific DataFrame.
+    Find rows with uniform responses for the provided dataframe argument.
+    Define uniform responses (rows) by two arguments: std and range. default std_threshold=0.0, range_threshold=0.
+    The default values indicate that only rows with identical values in all columns will be considered uniform responses.
+
+    :param dataframe: The DataFrame to check for uniform responses.
+    :param std_threshold: The threshold for the standard deviation of the row values.
+    :param range_threshold: The threshold for the range of the row values.
+    :param verbose: If set above 0, Print information about the number of detected uniform responses.
+    :return: Indexes of rows with uniform responses, or with low range, or with low std.
     """
-    # rows with uniform responses
-    uniform_reply = dataframe.apply(lambda x: x.nunique() == 1, axis=1)
+    # rows with completely uniform responses
+    uniform_reply: pd.DataFrame = dataframe.apply(lambda x: x.nunique() == 1, axis=1)
 
     # rows range of values
-    rng = dataframe.max(axis=1) - dataframe.min(axis=1)
+    rng: pd.Series = dataframe.max(axis=1) - dataframe.min(axis=1)
 
     # rows std
-    std = dataframe.std(axis=1)
+    std: pd.Series = dataframe.std(axis=1)
 
+    # print information about the number of detected uniform responses
     if verbose > 0:
-        print(df_name)
         print(f"N rows with uniform responses: {uniform_reply[uniform_reply].shape[0]}\n,"
               f" Indexes: {uniform_reply[uniform_reply].index}")
         print(f"N rows with low range: {rng[rng < range_threshold].shape[0]}\n,"
@@ -42,223 +52,70 @@ def detect_uniform_responses(df_name, dataframe, std_threshold=0.0, range_thresh
         std[std < std_threshold].index)
 
 
-def create_and_save_mapping(partial_df, full_df, prefix, output_directory):
+def create_and_save_mapping(dataframe: pd.DataFrame, prefix: str, output_directory: str):
     """
-    This function creates a mapping between the original column names and the new column names.
-    The mapping is saved to a CSV file. The function also renames the columns in the provided DataFrame,
-    to save the responses later on with the encoded column names.
+    Creates a mapping between the dataframe column names (questions) and the new column names (prefix+integer).
+    The mapping is saved to a CSV file. Renaming the columns as the new names.
 
-    :param prefix: The letter which encodes the original item (column) names
+    :param dataframe: The DataFrame to create the mapping for.
+    :param output_directory: The path to save the mapping to.
+    :param prefix: The letter which encodes the original item (column) names (e.g., 'u', 'v', 'w', 'x', 'y', 'z').
     :return: The full DataFrame with the renamed columns
     """
-    mapping = {}
-    excel_data = []
+    mapping = {}  # Dictionary to store the mapping
+    excel_data = []  # List to store the mapping for the Excel file
 
-    for i, col in enumerate(partial_df.columns):
-        # Extract text within square brackets if present using regex. This part is relevant for parts of the questionnaire
-        # where the column names are in the format: "general text [question]"
-        match = re.search(r'\[(.*?)]', col)
-        if match:
-            col_name = match.group(1)  # Use text within brackets
+    for i, col in enumerate(dataframe.columns):
+        # some column names (questions) are in square brackets. Extract the text within the brackets if exists.
+        match_question = re.search(r'\[(.*?)]', col)
+        if match_question:  # If brackets are found
+            col_name = match_question.group(1)  # Use text within brackets
         else:
             col_name = col  # Use the original column name if no brackets are found
 
         # Create the mapping
         mapping[col] = f"{prefix}{i + 1}"
+
+        # adding dict items allows to save to excel as proper table
         excel_data.append({'Questions': col_name, 'Variable': f"{prefix}{i + 1}"})
 
-        dataframe = pd.DataFrame(excel_data)
+        dataframe_for_excel = pd.DataFrame(excel_data)
 
-        dataframe.to_excel(output_directory, index=False)
-
+        # Save the mapping to an Excel file
+        dataframe_for_excel.to_excel(output_directory, index=False)
 
     # Rename columns in the provided DataFrame
-    full_df = full_df.rename(columns=mapping)
-
-    return full_df
+    dataframe.rename(columns=mapping, inplace=True)
 
 
 def main():
-    """
-    This code contains mostly manual work, due to the need of interpreting each item in the
-    questionnaire differently. Each preprocessing step in this main function is explained separately.
-    """
-
-    # Load the responses file
+    # Load all responses files (until febuary)
     df_not_full_qol = pd.read_excel(RESPONSES_PATH)
     df_full_qol = pd.read_excel(RESPONSES_FULL_QOL_PATH)
     df = pd.concat([df_not_full_qol, df_full_qol], axis=0)
 
-    # Split the DataFrame into question type seperated, columns are chosen by specific questions organization.
-    stress_df = pd.concat([df.iloc[:, excel_column_number('H'):excel_column_number('N') + 1],
-                           df.iloc[:, excel_column_number('R'):excel_column_number('S') + 1]], axis=1)
-    support_df = pd.concat([df.iloc[:, excel_column_number('F')],
-                            df.iloc[:, excel_column_number('O'):excel_column_number('Q') + 1]], axis=1)
-    phone_df = df.iloc[:, excel_column_number('T'):excel_column_number('Y') + 1]
-    media_df = df.iloc[:, excel_column_number('Z'):excel_column_number('AR') + 1]
-    resilience_df = df.iloc[:, excel_column_number('AS'):excel_column_number('BB') + 1]
-    QOL_df = df.iloc[:, excel_column_number('BC'):excel_column_number('BU') + 1]
+    df.drop(df.columns[-4], axis=1, inplace=True)  # Dropping email column
 
-    df_list = [stress_df, support_df, phone_df, media_df, resilience_df, QOL_df]
+    # Split the DataFrame into question type seperated
+    QOL_df, media_df, phone_df, resilience_df, stress_df, support_df = extracting_df_parts(df)
 
-    # Get df of the rest of the columns from the original df using the df_list
-    unchanged_df = df.drop(pd.concat(df_list, axis=1).columns, axis=1)
-
-    # Mapping all QOL responds from categorical to numerical
-    qol_val_mapping = {
-        "כמעט אף פעם": 1,
-        "לעיתים רחוקות": 2,
-        "לפעמים": 3,
-        "לעיתים קרובות": 4,
-        "כמעט תמיד": 5
-    }
-    QOL_df = QOL_df.map(lambda x: qol_val_mapping.get(x, x))
-
-    # Drop rows with uniform responses in qol_df
-    qol_index_to_drop = detect_uniform_responses('QOL_df', QOL_df, std_threshold=0.2, range_threshold=2,
-                                                 verbose=1)  # Some questions have different sentiment
-
-    # Change QOL negative questions values to positive TODO: adjust for new data when questions are added
-    columns_to_change = [
-        "באיזו תדירות המצבים הבאים רלוונטיים עבורך? \n(לממלאים בפלאפון- מומלץ לסובב את המסך) [תחושת כאב]",
-        "באיזו תדירות המצבים הבאים רלוונטיים עבורך? \n(לממלאים בפלאפון- מומלץ לסובב את המסך) [תחושת חוסר בטחון, חוסר בהירות]",
-        "באיזו תדירות המצבים הבאים רלוונטיים עבורך? \n(לממלאים בפלאפון- מומלץ לסובב את המסך) [חרדה / פחד]",
-        "באיזו תדירות המצבים הבאים רלוונטיים עבורך? \n(לממלאים בפלאפון- מומלץ לסובב את המסך) [דיכאון / עצב]",
-        "באיזו תדירות המצבים הבאים רלוונטיים עבורך? \n(לממלאים בפלאפון- מומלץ לסובב את המסך) [מתח / חוסר שקט]"
-    ]
-    for col in columns_to_change:
-        QOL_df[col] = QOL_df[col].map(lambda x: 6 - x)
-
-    # Mapping specific questions value for stress_df
-    stress_n_kids_mapping = {
-        0: 0,
-        1: 1,
-        2: 2,
-        "3-4": 3,
-        "5-6": 4,
-        "7+": 5
-    }
-    stress_df['מספר ילדים'] = stress_df['מספר ילדים'].map(stress_n_kids_mapping)
-    stress_df[' מספר ילדים המשרתים בשרות צבאי (חובה/מילואים)'] = stress_df[
-        ' מספר ילדים המשרתים בשרות צבאי (חובה/מילואים)'].map(lambda x: 3 if x == '3+' else x)
-
-    # mapping specific questions to binary according to stress cause reply
-    stress_df['בקרב האנשים הקרובים אלי ביותר (המשפחה הגרעינית או חברים קרובים מאוד)  יש משרתי מילואים במלחמה. '] = \
-        stress_df[
-            'בקרב האנשים הקרובים אלי ביותר (המשפחה הגרעינית או חברים קרובים מאוד)  יש משרתי מילואים במלחמה. '].map(
-            lambda x: 1 if x == 'כן, בחזית' or x == 'כן, בחזית, כן, בעורף' else 0)
-    stress_df['בעקבות המלחמה התפניתי מביתי'] = stress_df['בעקבות המלחמה התפניתי מביתי'].map(
-        lambda x: 0 if x == 'לא התפניתי' else 1)
-    stress_df['במקום המגורים שלי יש מרחב מוגן'] = stress_df['במקום המגורים שלי יש מרחב מוגן'].map(
-        lambda x: 0 if x == 'כן, ממ"ד' or x == 'כן, מקלט / ממ"ק' else 1)
-    stress_df['תעסוקה'] = stress_df['תעסוקה'].map(
-        lambda x: 1 if x == 'בחל"ת' or x == 'עצמאי/ת' else 0)  # TODO: varify assumption
-    military_service_mapping = {
-        "לא": 0,
-        "תומך לחימה / משרת בעורף": 1,
-        "תפקיד קרבי - מילואים": 2,
-        "תפקיד קרבי - סדיר": 2
-    }
-    stress_df['הנני משרת / שירתתי בצבא בזמן המלחמה (קרבי או לא)'] = \
-        stress_df['הנני משרת / שירתתי בצבא בזמן המלחמה (קרבי או לא)'].map(military_service_mapping)
-    stress_shelter_time = {
-        "איני יודע/ת": 0,
-        'הנני שוהה בחו"ל בזמן המלחמה': 0,
-        "עד דקה וחצי": 1,
-        "עד דקה": 2,
-        "עד 45 שניות": 3,
-        "עד 30 שניות": 4,
-        "עד 15 שניות": 5,
-        "מיידי": 5
-    }
-    stress_df['מרחק מקום מגורים מרצועת עזה / גבול הצפון (זמן כניסה למרחב המוגן)'] = \
-        stress_df['מרחק מקום מגורים מרצועת עזה / גבול הצפון (זמן כניסה למרחב המוגן)'].map(stress_shelter_time)
-    income_loss = {
-        'לא נפגעו כלל': 0,
-        'נפגעו במידת מה': 1,
-        'נפגעו משמעותית': 2
-    }
-    stress_df['הכנסותי / הכנסות משק הבית שלי נפגעו כתוצאה מהמלחמה'] = \
-        stress_df['הכנסותי / הכנסות משק הבית שלי נפגעו כתוצאה מהמלחמה'].map(income_loss)
-
-    # Mapping all resilience responds from categorical to numerical
-    resilience_val_mapping = {
-        "כלל לא מסכים": 1,
-        "לא מסכים": 2,
-        "ניטרלי (לא מסכים ולא מתנגד)": 3,
-        "מסכים": 4,
-        "מסכים במידה רבה": 5
-    }
-    resilience_df = resilience_df.map(lambda x: resilience_val_mapping.get(x, x))
-
-    # Mapping specific questions value for phone_df
-    phone_hours_use_mapping = {
-        "עד שעה": 1,
-        "1-3 שעות": 2,
-        "3-6 שעות": 3,
-        "6-9 שעות": 4,
-        "9+ שעות": 5
-    }
-    phone_unaware_use_mapping = {
-        "כלל לא": 1,
-        "לעיתים רחוקות": 2,
-        "מדי פעם": 3,
-        "לעיתים קרובות": 4,
-        "כל הזמן": 5
-    }
-    phone_df.iloc[:, 0] = phone_df.iloc[:, 0].map(lambda x: phone_hours_use_mapping[x]).astype(int)
-    phone_df.iloc[:, 1:] = phone_df.iloc[:, 1:].apply(lambda x: x.map(phone_unaware_use_mapping.get)).astype(int)
-    phone_df = phone_df.astype(int)
-
-    # Mapping specific questions value for media_df
-    media_val_mapping = {
-        "כלל לא": 1,
-        "מעט מאוד": 2,
-        "מעט": 3,
-        "הרבה": 4,
-        "הרבה מאוד": 5
-    }
+    # dropping irrelevant columns
     media_df.drop('במידה וסימנת "כן" בשאלה הקודמת, ציין/ני מה הוא מקור זה. ', axis=1, inplace=True)
-    media_df.drop('בזמן מילוי שאלון זה מצב הלחימה הינו', axis=1,
-                  inplace=True)
-    for col in media_df.columns:
-        if 'עד כמה' in col:
-            media_df[col] = media_df[col].map(lambda x: media_val_mapping.get(x, x))
-        elif col == 'ציין עד כמה הנך מקבל/ת מידע חדשותי מהערוצים זרים -- ישראליים.':
-            media_df[col] = media_df[col].astype(int)
+    media_df.drop('בזמן מילוי שאלון זה מצב הלחימה הינו', axis=1, inplace=True)
+    unchanged_df = df[['גיל', 'מגדר', 'מצב משפחתי', 'מהי רמת ההשכלה שלך?']].copy()
 
-    # mapping specific questions to binary according to stress cause reply
-    media_df['האם במהלך המלחמה התחלתי לצרוך חדשות ברשת/ערוץ מדיה חדש שלא צרכתי לפני המלחמה'] = media_df[
-        'האם במהלך המלחמה התחלתי לצרוך חדשות ברשת/ערוץ מדיה חדש שלא צרכתי לפני המלחמה'].map(
-        lambda x: 1 if x == 'כן' else 0)
-    media_df['האם הנך מקבל/ת בטלפון התראות מאתרי חדשות?'] = media_df['האם הנך מקבל/ת בטלפון התראות מאתרי חדשות?'].map(
-        lambda x: 1 if x == 'כן' else 0)
-    media_df['ציין עד כמה הנך מקבל/ת מידע חדשותי מהערוצים זרים -- ישראליים.'] = \
-        media_df['ציין עד כמה הנך מקבל/ת מידע חדשותי מהערוצים זרים -- ישראליים.'].map(lambda x: 8-x)
+    # Change qol column order back to original. -3 -> 3, -2 -> 12, -1 -> 15
+    QOL_df = QOL_df[list(QOL_df.columns[: 2]) + list([QOL_df.columns[-3]]) + list(QOL_df.columns[2:7]) +
+                    list([QOL_df.columns[-2]]) + list(QOL_df.columns[7:9]) + list([QOL_df.columns[-1]]) + list(
+        QOL_df.columns[9:19])]
 
-    # Mapping specific questions value for support_df
-    support_df['שיוך דתי'] = support_df['שיוך דתי'].map(lambda x: 1 if x == 'דתי' else 0)
-    volunteer_mapping = {
-        "לא": 0,
-        "כן, למספר ימים": 1,
-        "כן, מעל שבוע": 2
-    }
-    support_df['האם התנדבת במהלך המלחמה?'] = support_df['האם התנדבת במהלך המלחמה?'].map(volunteer_mapping)
-    support_df["האם תרמת באופן כלכלי (כסף / ציוד / בגדים /מזון וכו'..) במהלך המלחמה"] = \
-        support_df["האם תרמת באופן כלכלי (כסף / ציוד / בגדים /מזון וכו'..) במהלך המלחמה"].map(
-            lambda x: 1 if x == 'כן' else 0)
-    # create new columns in support df using dummies for specific column
-    support_df = pd.concat([support_df, pd.get_dummies(support_df['באיזה סוג של יישוב קהילתי הנך מתגורר/ת'],
-                                                   prefix='באיזה סוג של יישוב קהילתי הנך מתגורר/ת').astype(int)], axis=1)
-    support_df.drop('באיזה סוג של יישוב קהילתי הנך מתגורר/ת', axis=1, inplace=True)
+    # map the unchanged_df according to config file
+    unchanged_df.rename(columns=config["general_questions"]["rename"], inplace=True)
 
-    # Concatenate all the DataFrames
-    combined_df = pd.concat([resilience_df, QOL_df, stress_df, support_df, phone_df, media_df], axis=1)
-
-    # Normalize all data to scale of 0-1
-    combined_df = combined_df.apply(lambda x: (x - x.min()) / (x.max() - x.min()))
-
-    combined_df = pd.concat([combined_df, unchanged_df], axis=1)
+    unchanged_df['age'] = unchanged_df['age'].map(lambda x: config['general_questions']['age'][x])
+    unchanged_df['gender'] = unchanged_df['gender'].map(lambda x: config['general_questions']['gender'][x])
+    unchanged_df['status'] = unchanged_df['status'].map(lambda x: config['general_questions']['family_status'][x])
+    unchanged_df['education'] = unchanged_df['education'].map(lambda x: config['general_questions']['education'][x])
 
     # creating list again because of changed dataframes. create list of letter encoding for each dataframe
     df_list = [stress_df, support_df, phone_df, media_df, resilience_df, QOL_df]
@@ -266,7 +123,77 @@ def main():
 
     # Create and save the mappings of columns for sem analysis
     for df, prefix in zip(df_list, letters_mapping_list):
-        combined_df = create_and_save_mapping(df, combined_df, prefix, ITEM_MAPS_PATH / f'{prefix}_mapping.xlsx')
+        create_and_save_mapping(df, prefix, ITEM_MAPS_PATH / f'{prefix}_mapping.xlsx')
+
+    # Mapping all QOL responds from categorical to numerical based on QOL_MAPPING
+    QOL_df = QOL_df.map(lambda x: config["QOL_MAPPING"].get(x, x))
+
+    # Drop rows with uniform responses in qol_df
+    qol_index_to_drop = detect_uniform_responses(QOL_df, std_threshold=0.2, range_threshold=2,
+                                                 verbose=1)  # Some questions have different sentiment
+
+    # Change QOL negative questions values to positive
+    for col in config['QOL_NEGATIVE_QUESTIONS']:
+        QOL_df[col] = QOL_df[col].map(lambda x: 6 - x)
+
+    # Impute 3 missing items in QOL_df
+    knn_imputer = KNNImputer(n_neighbors=3)
+    QOL_df = pd.DataFrame(knn_imputer.fit_transform(QOL_df), columns=QOL_df.columns, index=QOL_df.index)
+
+    # Mapping specific questions value for stress_df
+    stress_df['u2'] = stress_df['u2'].map(lambda x: config["STRESS"]["n_kids_alternative_1"][str(x)])
+    stress_df['u4'] = stress_df['u4'].map(config["STRESS"]["military_service_alternative_1"])
+    stress_df['u6'] = stress_df['u6'].map(config["STRESS"]["shelter_time_alternative_1"])
+    stress_df['u7'] = stress_df['u7'].map(config["STRESS"]["income_loss"])
+
+    # stress_df['u3'] = stress_df['u3'].map(lambda x: 0 if x == '3+' else x)
+    stress_df['u3'] = stress_df['u3'].map(lambda x: 0 if x == 0 else 1)
+    # stress_df['u5'] = stress_df['u5'].map(lambda x: 1 if x == 'כן, בחזית' or x == 'כן, בחזית, כן, בעורף' else 0)
+    stress_df['u5'] = stress_df['u5'].map(lambda x: 1 if x == 'כן, בחזית' else 0)
+    stress_df['u8'] = stress_df['u8'].map(lambda x: 0 if x == 'לא התפניתי' else 1)
+    # stress_df['u9'] = stress_df['u9'].map(lambda x: 0 if x == 'כן, ממ"ד' or x == 'כן, מקלט / ממ"ק' else 1)
+    stress_df['u9'] = stress_df['u9'].map(lambda x: 1 if x == 'לא' else 0)
+    # use pd get_dummies for u1
+    stress_df = pd.concat([stress_df, pd.get_dummies(stress_df['u1'], prefix='u1').astype(int)],
+                          axis=1)  # .drop('u1', axis=1)
+    stress_df['u1'] = stress_df['u1'].map(lambda x: 1 if x == 'בחל"ת' or x == 'עצמאי/ת' or x == 'מובטל/ת' else 0)
+
+    # Mapping all resilience responds from categorical to numerical
+    resilience_df = resilience_df.map(lambda x: config["RESILIENCE"].get(x, x))
+
+    # Mapping specific questions value for phone_df
+    phone_df.iloc[:, 0] = phone_df.iloc[:, 0].map(lambda x: config["PHONE"]["hours_use"][x]).astype(int)
+    phone_df.iloc[:, 1:] = phone_df.iloc[:, 1:].apply(lambda x: x.map(config["PHONE"]["unaware_use"].get)).astype(int)
+    phone_df = phone_df.astype(int)
+
+    # Mapping media items
+    media_df['x8'] = media_df['x8'].map(lambda x: 1 if x == 'כן' else 0)
+    media_df['x9'] = media_df['x9'].map(lambda x: 1 if x == 'כן' else 0)
+    media_df['x17'] = media_df['x17'].fillna(7).map(lambda x: 8 - x)
+
+    for col in media_df.columns:
+        if col not in ["x8", "x9", "x17"]:
+            media_df[col] = media_df[col].map(lambda x: config["MEDIA"].get(x, x))
+
+    # Mapping specific questions value for support_df
+    support_df = pd.concat([support_df, pd.get_dummies(support_df['v1'], prefix='v1').astype(int)],
+                           axis=1)  # .drop('v1', axis=1)
+    support_df['v1'] = support_df['v1'].map(lambda x: 1 if x == 'דתי' else 0)
+    support_df['v2'] = support_df['v2'].map(config["SUPPORT_VOULENTEER"])
+    support_df["v3"] = support_df["v3"].map(lambda x: 1 if x == 'כן' else 0)
+    support_df = pd.concat([support_df, pd.get_dummies(support_df['v4'], prefix='v4').astype(int)],
+                           axis=1)  # .drop('v4', axis=1)
+    support_df['v4'] = support_df['v4'].map(lambda x: 0 if x == 'עיר' else 1)
+
+    # Concatenate all the DataFrames
+    combined_df = pd.concat([resilience_df, QOL_df, stress_df, support_df, phone_df, media_df, unchanged_df], axis=1)
+
+    # check which of the combined_df column is object / not numerical
+    object_columns = combined_df.select_dtypes(include=['object']).columns
+    print(f"Columns with object type: {object_columns}")
+
+    # normalize
+    combined_df = combined_df.apply(lambda x: (x - x.min()) / (x.max() - x.min()))
 
     # Drop rows of qol_index_to_drop and save dropped lines to a excel file named 'dropped_lines.xlsx'
     dropped_lines = combined_df.loc[qol_index_to_drop, :]
@@ -277,6 +204,18 @@ def main():
     combined_df.to_excel(data_folder_path / 'processed_responses.xlsx', index=False)
 
 
+def extracting_df_parts(df):
+    stress_df = pd.concat([df.iloc[:, excel_column_number('H'):excel_column_number('N') + 1],
+                           df.iloc[:, excel_column_number('R'):excel_column_number('S') + 1]], axis=1)
+    support_df = pd.concat([df.iloc[:, excel_column_number('F')],
+                            df.iloc[:, excel_column_number('O'):excel_column_number('Q') + 1]], axis=1)
+    phone_df = df.iloc[:, excel_column_number('T'):excel_column_number('Y') + 1]
+    media_df = df.iloc[:, excel_column_number('Z'):excel_column_number('AR') + 1]
+    resilience_df = df.iloc[:, excel_column_number('AS'):excel_column_number('BB') + 1]
+    QOL_df = df.iloc[:, excel_column_number('BC'):excel_column_number('BX') + 1]
+    return QOL_df, media_df, phone_df, resilience_df, stress_df, support_df
+
+
 if __name__ == "__main__":
     # Path to the directory where the script is located
     script_dir = Path(__file__).parent
@@ -284,10 +223,13 @@ if __name__ == "__main__":
     # Path to the 'responses.xlsx' file in the 'data' folder
     data_folder_path = script_dir / '..' / 'data'
     RESPONSES_PATH = data_folder_path / 'responses210124.xlsx'
-    RESPONSES_FULL_QOL_PATH = data_folder_path / 'responses_full_qol300124.xlsx'
+    RESPONSES_FULL_QOL_PATH = data_folder_path / 'responses_full_qol060224.xlsx'
 
     # Create a directory for the items maps
     ITEM_MAPS_PATH = script_dir / '..' / 'items_maps'
     ITEM_MAPS_PATH.mkdir(parents=True, exist_ok=True)
+
+    with open('config.json', encoding='utf-8') as f:
+        config = json.load(f)
 
     main()
