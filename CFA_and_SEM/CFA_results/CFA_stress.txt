@@ -1,0 +1,75 @@
+lavaan 0.6.17 ended normally after 53 iterations
+
+  Estimator                                         ML
+  Optimization method                           NLMINB
+  Number of model parameters                        10
+
+  Number of observations                           300
+
+Model Test User Model:
+                                                      
+  Test statistic                                 0.024
+  Degrees of freedom                                 0
+
+Model Test Baseline Model:
+
+  Test statistic                               119.306
+  Degrees of freedom                                 6
+  P-value                                        0.000
+
+User Model versus Baseline Model:
+
+  Comparative Fit Index (CFI)                    1.000
+  Tucker-Lewis Index (TLI)                       1.000
+
+Loglikelihood and Information Criteria:
+
+  Loglikelihood user model (H0)               -233.178
+  Loglikelihood unrestricted model (H1)       -233.166
+                                                      
+  Akaike (AIC)                                 486.356
+  Bayesian (BIC)                               523.394
+  Sample-size adjusted Bayesian (SABIC)        491.680
+
+Root Mean Square Error of Approximation:
+
+  RMSEA                                          0.000
+  90 Percent confidence interval - lower         0.000
+  90 Percent confidence interval - upper         0.000
+  P-value H_0: RMSEA <= 0.050                       NA
+  P-value H_0: RMSEA >= 0.080                       NA
+
+Standardized Root Mean Square Residual:
+
+  SRMR                                           0.002
+
+Parameter Estimates:
+
+  Standard errors                             Standard
+  Information                                 Expected
+  Information saturated (h1) model          Structured
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(>|z|)   Std.lv  Std.all
+  stress1 =~                                                            
+    u1                1.000                               0.326    0.883
+    u7                0.330       NA                      0.108    0.318
+  stress2 =~                                                            
+    u1                1.000                               0.151    0.410
+    u2                1.542       NA                      0.234    0.804
+    u3                0.905       NA                      0.137    0.547
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(>|z|)   Std.lv  Std.all
+  stress1 ~~                                                            
+    stress2          -0.003       NA                     -0.057   -0.057
+
+Variances:
+                   Estimate  Std.Err  z-value  P(>|z|)   Std.lv  Std.all
+   .u1                0.013       NA                      0.013    0.095
+   .u7                0.103       NA                      0.103    0.899
+   .u2                0.030       NA                      0.030    0.353
+   .u3                0.044       NA                      0.044    0.701
+    stress1           0.106       NA                      1.000    1.000
+    stress2           0.023       NA                      1.000    1.000
+

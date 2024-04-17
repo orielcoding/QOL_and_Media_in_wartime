@@ -1,0 +1,123 @@
+lavaan 0.6.17 ended normally after 64 iterations
+
+  Estimator                                         ML
+  Optimization method                           NLMINB
+  Number of model parameters                        18
+
+                                                  Used       Total
+  Number of observations                           323         331
+
+Model Test User Model:
+                                                      
+  Test statistic                                84.093
+  Degrees of freedom                                27
+  P-value (Chi-square)                           0.000
+
+Model Test Baseline Model:
+
+  Test statistic                               958.554
+  Degrees of freedom                                36
+  P-value                                        0.000
+
+User Model versus Baseline Model:
+
+  Comparative Fit Index (CFI)                    0.938
+  Tucker-Lewis Index (TLI)                       0.917
+
+Loglikelihood and Information Criteria:
+
+  Loglikelihood user model (H0)                777.320
+  Loglikelihood unrestricted model (H1)        819.367
+                                                      
+  Akaike (AIC)                               -1518.640
+  Bayesian (BIC)                             -1450.643
+  Sample-size adjusted Bayesian (SABIC)      -1507.737
+
+Root Mean Square Error of Approximation:
+
+  RMSEA                                          0.081
+  90 Percent confidence interval - lower         0.062
+  90 Percent confidence interval - upper         0.101
+  P-value H_0: RMSEA <= 0.050                    0.005
+  P-value H_0: RMSEA >= 0.080                    0.553
+
+Standardized Root Mean Square Residual:
+
+  SRMR                                           0.049
+
+Parameter Estimates:
+
+  Standard errors                             Standard
+  Information                                 Expected
+  Information saturated (h1) model          Structured
+
+Latent Variables:
+                   Estimate
+  resilience =~            
+    z1                1.000
+    z2                0.905
+    z4                0.898
+    z5                0.837
+    z6                0.730
+    z7                0.681
+    z8                0.772
+    z10               0.649
+    z11               0.823
+  Std.Err  z-value  P(>|z|)
+                           
+                           
+    0.080   11.277    0.000
+    0.086   10.447    0.000
+    0.083   10.114    0.000
+    0.089    8.195    0.000
+    0.078    8.742    0.000
+    0.083    9.248    0.000
+    0.077    8.370    0.000
+    0.065   12.691    0.000
+   Std.lv  Std.all
+                  
+    0.164    0.693
+    0.149    0.704
+    0.148    0.647
+    0.138    0.624
+    0.120    0.500
+    0.112    0.535
+    0.127    0.567
+    0.107    0.511
+    0.135    0.809
+
+Variances:
+                   Estimate
+   .z1                0.029
+   .z2                0.023
+   .z4                0.030
+   .z5                0.030
+   .z6                0.043
+   .z7                0.031
+   .z8                0.034
+   .z10               0.032
+   .z11               0.010
+    resilience        0.027
+  Std.Err  z-value  P(>|z|)
+    0.003   10.933    0.000
+    0.002   10.823    0.000
+    0.003   11.331    0.000
+    0.003   11.486    0.000
+    0.004   12.076    0.000
+    0.003   11.946    0.000
+    0.003   11.803    0.000
+    0.003   12.037    0.000
+    0.001    9.058    0.000
+    0.004    6.719    0.000
+   Std.lv  Std.all
+    0.029    0.520
+    0.023    0.505
+    0.030    0.582
+    0.030    0.610
+    0.043    0.750
+    0.031    0.714
+    0.034    0.678
+    0.032    0.739
+    0.010    0.345
+    1.000    1.000
+
