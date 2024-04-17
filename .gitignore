@@ -9,8 +9,6 @@ __pycache__/
 .idea/
 
 # undesired folders for the current branch
-loadings/
-items_maps/
 general docs/
-CFA_and_SEM/
+CFA_and_SEM/R for sem/
 2019 study/
