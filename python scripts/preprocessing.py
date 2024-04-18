@@ -193,7 +193,10 @@ def main():
     print(f"Columns with object type: {object_columns}")
 
     # normalize
-    combined_df = combined_df.apply(lambda x: (x - x.min()) / (x.max() - x.min()))
+    # combined_df = combined_df.apply(lambda x: (x - x.min()) / (x.max() - x.min()))
+
+    # normalize by standard scaler (value-mean)/std
+    combined_df = combined_df.apply(lambda x: (x - x.mean()) / x.std())
 
     # Drop rows of qol_index_to_drop and save dropped lines to a excel file named 'dropped_lines.xlsx'
     dropped_lines = combined_df.loc[qol_index_to_drop, :]
