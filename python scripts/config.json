@@ -1,10 +1,10 @@
 {
     "QUESTIONS": {
         "QOL": {
-            "FUNCTIONING": ["y1", "y4", "y5", "y6", "y8", "y10", "y11", "y13", "y14"],
-            "FUNCTIONING_WITH_IMPUTATION": ["y1", "y3", "y4", "y5", "y6", "y8", "y9", "y10", "y11", "y12", "y13", "y14"],
+            "FUNCTIONING": ["y4", "y5", "y6", "y8", "y10", "y11", "y13", "y14", "y21"],
+            "FUNCTIONING_WITH_IMPUTATION": ["y3", "y4", "y5", "y6", "y8", "y9", "y10", "y11", "y12", "y13", "y14", "y21"],
             "COMPETENCE": ["y2", "y15", "y16", "y17", "y18"],
-            "POSITIVE_FEELING": ["y7", "y19", "y20", "y21", "y22"]
+            "POSITIVE_FEELING": ["y1", "y7", "y19", "y20", "y22"]
         },
         "RESILIENCE": ["z1", "z2", "z3", "z4", "z5", "z6", "z7", "z8", "z9", "z10"],
         "MEDIA": {
