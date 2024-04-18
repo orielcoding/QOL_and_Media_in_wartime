@@ -5,6 +5,7 @@ import json
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import itertools
+from sklearn.preprocessing import StandardScaler
 from itertools import permutations
 from EDA import corr_heatmap, reverse_hebrew_text
 
@@ -197,6 +198,8 @@ def add_row(lst, coefficient_single, p_value_single, predictor, target, general_
 
 
 def create_latent_factor(df):
+    """create mean latent factors, and normalize them with standard scaler"""
+
     df.loc[:, 'functioning'] = df.loc[:, config['QUESTIONS']['QOL']['FUNCTIONING']].mean(axis=1)
     df.loc[:, 'competence'] = df.loc[:, config['QUESTIONS']['QOL']['COMPETENCE']].mean(axis=1)
     df.loc[:, 'positive_feeling'] = df.loc[:, config['QUESTIONS']['QOL']['POSITIVE_FEELING']].mean(axis=1)
@@ -216,6 +219,13 @@ def create_latent_factor(df):
     df.loc[:, 'stress'] = df.loc[:, config['QUESTIONS']['STRESS']].mean(axis=1)
     df.loc[:, 'support'] = df.loc[:, config['QUESTIONS']['SUPPORT']].mean(axis=1)
     df.loc[:, 'support2'] = df.loc[:, config['QUESTIONS']['SUPPORT2']].mean(axis=1)
+
+    # Normalizing the newly created columns
+    columns_to_scale = ['functioning', 'competence', 'positive_feeling', 'qol', 'traditional_news', 'online_news',
+                        'push_news', 'communication_platforms', 'entertainment', 'social_media', 'offline', 'resilience',
+                        'phone', 'stress', 'support', 'support2']
+    scaler = StandardScaler()
+    df[columns_to_scale] = scaler.fit_transform(df[columns_to_scale])
 
 
 if __name__ == "__main__":
