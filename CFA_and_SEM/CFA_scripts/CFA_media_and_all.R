@@ -205,6 +205,21 @@ CFA16.model <- 	'
 CFA16.fit <- cfa(CFA16.model, data = respondents_data)
 summary(CFA16.fit, standardized = TRUE, fit.measures = TRUE)
 
+###################
+# 30.4 addition: testing without x8 and x9 (binary items). distinguish content and news.
+CFA_ordinal.model <- 	'  
+          offline_news =~ x7 + x2 + x6
+			    social_contact =~ x10 + x5 + x16
+			    #content_consumption =~ x12 + x1 + x14
+			    indirect_news_exposure =~ x15 + x11 + x3
+			    #push =~ x8 + x9 + x13
+				'
+
+CFA_ordinal.fit <- cfa(CFA_ordinal.model, data = respondents_data)
+summary(CFA_ordinal.fit, standardized = TRUE, fit.measures = TRUE)
+
+####################
+
 
 CFA17.model <- 	'  
 			    social_contact =~ x10 + x1 + x5 + x12 + x16
