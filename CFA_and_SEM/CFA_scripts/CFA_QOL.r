@@ -68,7 +68,7 @@ semPaths(full.fit2, intercepts = TRUE, edge.label.cex = 1, what = 'std', structu
 
 
 ################################################################################
-FROM HERE DOWN ITS OLD QOL ANALYSIS INCLUDED IMPUTATION THAT IS UNDESIRED.
+#FROM HERE DOWN ITS OLD QOL ANALYSIS INCLUDED IMPUTATION THAT IS UNDESIRED.
 ################################################################################
 
 ##############################################################################
@@ -222,6 +222,61 @@ summary(qol.fit2,standardized = TRUE , fit.measures = TRUE, ci=TRUE)
 semPaths(qol.fit2, intercepts = FALSE,edge.label.cex = 1, what = 'std',structural = TRUE)
 #################################################################
 
+## addition : 30.4 , y1 switches to positive feeling.
+# y3, y9, y12 is out. 
+
+qol.model <- 	'  
+			    functioning =~ y4 + y5 + y6 + y8  + y10 + y11  + y13 + y14 + y21
+			    competence =~ y2 + y15 + y16 + y17 + y18
+			    positive_feeling =~ y1 + y7 + y19 + y20 + y22
+			    
+			    qol =~ functioning + competence + positive_feeling
+			    '
+
+
+qol.fit2 <- cfa(qol.model, data = respondents_data)
+
+summary(qol.fit2,standardized = TRUE , fit.measures = TRUE, ci=TRUE)
+
+
+#################################################################
+
+## addition : 30.4 , functioning
+functioning.model <- 	'  
+			    functioning =~ y4 + y5 + y6 + y8  + y10 + y11  + y13 + y14 + y21
+			    '
+
+
+functioning.fit2 <- cfa(functioning.model, data = respondents_data)
+
+summary(functioning.fit2, standardized = TRUE , fit.measures = TRUE, ci=TRUE)
+
+#################################################################
+
+## addition : 30.4 , functioning
+competence.model <- 	'  
+			    competence =~ y16 + y2 + y15 +  y17 + y18
+			    '
+
+
+competence.fit2 <- cfa(competence.model, data = respondents_data)
+
+summary(competence.fit2, standardized = TRUE , fit.measures = TRUE)
+
+#################################################################
+
+## addition : 30.4 , functioning
+positive_feeling.model <- 	'  
+			    positive_feeling =~ y1 + y7 + y19 + y20 + y22
+			    '
+
+
+positive_feeling.fit2 <- cfa(positive_feeling.model, data = respondents_data)
+
+summary(positive_feeling.fit2, standardized = TRUE , fit.measures = TRUE, ci=TRUE)
+
+
+#################################################################
 # previous study data!
 # original setup
 respondents_data <- read.csv(file.path(current_dir, "..", '2019 study', 'res_SEM.csv'))
