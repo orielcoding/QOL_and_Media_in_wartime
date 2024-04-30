@@ -211,8 +211,7 @@ CFA_ordinal.model <- 	'
           offline_news =~ x7 + x2 + x6
 			    social_contact =~ x10 + x5 + x16
 			    #content_consumption =~ x12 + x1 + x14
-			    indirect_news_exposure =~ x15 + x11 + x3
-			    #push =~ x8 + x9 + x13
+			    indirect_news_exposure =~ x15 + x11 + x3 + x13
 				'
 
 CFA_ordinal.fit <- cfa(CFA_ordinal.model, data = respondents_data)

@@ -194,10 +194,13 @@ def main():
 
     # normalize
     # combined_df = combined_df.apply(lambda x: (x - x.min()) / (x.max() - x.min()))
+    #    combined_df = combined_df.apply(lambda x: (x - x.mean()) / x.std())
 
-    # normalize by standard scaler (value-mean)/std
-    combined_df = combined_df.apply(lambda x: (x - x.mean()) / x.std())
-
+    # normalize by standard scaler (value-mean)/std, only if the column is not binary
+    for col in combined_df.columns:
+        if len(combined_df[col].unique()) > 2:
+            combined_df[col] = (combined_df[col] - combined_df[col].mean()) / combined_df[col].std()
+            
     # Drop rows of qol_index_to_drop and save dropped lines to a excel file named 'dropped_lines.xlsx'
     dropped_lines = combined_df.loc[qol_index_to_drop, :]
     dropped_lines.to_excel(ITEM_MAPS_PATH / 'dropped_lines.xlsx', index=False)
