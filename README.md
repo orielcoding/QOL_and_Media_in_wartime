@@ -2,7 +2,8 @@
 
 This repo contains the data collected on Israeli subjects during Israel-Gaza War in the months of November 23 - Febuary 24. 
 
-The repo contains 3 main parts - 
-1. preprocessing the original data from '' and '' to 'preprocessed_data' - which is the final data on which we conducted SEM.
-2. '' python file - which describes EDA on the data and some basic EFA.
-3. '' R file - the main part in which we conducted our SEM analysis.
+The repo contains 2 main parts - 
+1. Data folder - contains the original data and the preprocessed data.
+2. python scripts - preprocessing.py to preprocess the data with config.json to configure the preprocessing. Include also basic EDA.py file for Exploratory Data Analysis.
+
+The SEM analysis is done in SPSS and found in another repo mentioned in the article. 

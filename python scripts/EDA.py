@@ -4,7 +4,6 @@ import seaborn as sns
 from scipy import stats
 from scipy.stats import f_oneway, levene, shapiro
 import numpy as np
-from preprocessing import excel_column_number
 import matplotlib as mpl
 from pathlib import Path
 
@@ -123,6 +122,7 @@ def ks_test_2sample(group1_data, group2_data, alpha=0.05, ks_threshold=None):
 
 
 def analyze_and_plot(dataframe, categorical_column, numerical_column):
+    """Analyze and plot the distribution of a numerical column for each category in a categorical column."""
     plt.figure(figsize=(10, 6))
     reversed_column_label = reverse_hebrew_text(categorical_column)
 
@@ -165,6 +165,7 @@ def analyze_and_plot(dataframe, categorical_column, numerical_column):
 
 
 def corr_heatmap(dataframes: list, df_names: list, threshold=.65) -> None:
+    """Plot a heatmap of the correlation matrix between the given dataframes."""
     plt.figure(figsize=(15, 10))
     corrs = pd.concat(dataframes, axis=1).corr()
     mask = np.triu(np.ones_like(corrs))
@@ -305,7 +306,7 @@ if __name__ == "__main__":
     # Path to the 'processed_responses.xlsx' file in the 'data' folder
     data_folder_path = script_dir / '..' / 'data'
     FILE_PATH = data_folder_path / 'processed_responses.xlsx'
-    RESPONSES_PATH = data_folder_path / 'responses210124.xlsx'
-    RESPONSES_FULL_QOL_PATH = data_folder_path / 'responses_full_qol060224.xlsx'
+    RESPONSES_PATH = data_folder_path / 'first_questionnaire_responses.xlsx'
+    RESPONSES_FULL_QOL_PATH = data_folder_path / 'second_questionnaire_responses.xlsx'
 
     main()

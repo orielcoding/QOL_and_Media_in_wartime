@@ -1,30 +1,4 @@
 {
-    "QUESTIONS": {
-        "QOL": {
-            "FUNCTIONING": ["y4", "y5", "y6", "y8", "y10", "y11", "y13", "y14", "y21"],
-            "FUNCTIONING_WITH_IMPUTATION": ["y3", "y4", "y5", "y6", "y8", "y9", "y10", "y11", "y12", "y13", "y14", "y21"],
-            "COMPETENCE": ["y2", "y15", "y16", "y17", "y18"],
-            "POSITIVE_FEELING": ["y1", "y7", "y19", "y20", "y22"]
-        },
-        "RESILIENCE": ["z1", "z2", "z3", "z4", "z5", "z6", "z7", "z8", "z9", "z10"],
-        "MEDIA": {
-            "OFFLINE": ["x4", "x5", "x6"],
-            "TRADITIONAL_NEWS": ["x2", "x6", "x7"],
-            "ONLINE_NEWS": ["x11", "x15", "x13"],
-            "PUSH_NEWS": ["x13", "x8", "x9"],
-            "COMMUNICATION_PLATFORMS": ["x5", "x16", "x10"],
-            "ENTERTAINMENT": ["x1", "x12", "x14"],
-
-
-            "SOCIAL_MEDIA": ["x1", "x12", "x13", "x14", "x15"]
-
-        },
-        "PHONE_UNAWARE_USAGE": ["w1", "w2", "w3", "w4", "w5", "w6"],
-        "STRESS": ["u1", "u2", "u3", "u4", "u5", "u6", "u7", "u8", "u9"],
-        "SUPPORT": ["v1", "v2", "v3", "v4"],
-        "SUPPORT2": ["v2", "v3"]
-    },
-
     "QOL_MAPPING": {
         "כמעט אף פעם": 1,
         "לעיתים רחוקות": 2,

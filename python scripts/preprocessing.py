@@ -1,8 +1,6 @@
 import pandas as pd
 from pathlib import Path
 import re
-from sklearn.experimental import enable_iterative_imputer
-from sklearn.impute import IterativeImputer
 from sklearn.impute import KNNImputer
 import json
 
@@ -228,8 +226,8 @@ if __name__ == "__main__":
 
     # Path to the 'responses.xlsx' file in the 'data' folder
     data_folder_path = script_dir / '..' / 'data'
-    RESPONSES_PATH = data_folder_path / 'responses210124.xlsx'
-    RESPONSES_FULL_QOL_PATH = data_folder_path / 'responses_full_qol060224.xlsx'
+    RESPONSES_PATH = data_folder_path / 'first_questionnaire_responses.xlsx'
+    RESPONSES_FULL_QOL_PATH = data_folder_path / 'second_questionnaire_responses.xlsx'
 
     # Create a directory for the items maps
     ITEM_MAPS_PATH = script_dir / '..' / 'items_maps'
