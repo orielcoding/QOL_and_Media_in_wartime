@@ -10,5 +10,10 @@ __pycache__/
 
 # undesired folders for the current branch
 general docs/
-CFA_and_SEM/R for sem/
+CFA_and_SEM/
 2019 study/
+dataignore/
+loadings/
+python scripts/not upload/
+
+.gitignore/
